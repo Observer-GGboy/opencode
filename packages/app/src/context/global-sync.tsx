@@ -86,6 +86,18 @@ function createGlobalSync() {
     provider_auth: {},
   })
 
+  function normalizeProviderList(data: ProviderListResponse): ProviderListResponse {
+    return {
+      ...data,
+      all: data.all.map((provider) => ({
+        ...provider,
+        models: Object.fromEntries(
+          Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
+        ),
+      })),
+    }
+  }
+
   const children: Record<string, ReturnType<typeof createStore<State>>> = {}
   function child(directory: string) {
     if (!directory) console.error("No directory provided")
@@ -161,16 +173,7 @@ function createGlobalSync() {
       project: () => sdk.project.current().then((x) => setStore("project", x.data!.id)),
       provider: () =>
         sdk.provider.list().then((x) => {
-          const data = x.data!
-          setStore("provider", {
-            ...data,
-            all: data.all.map((provider) => ({
-              ...provider,
-              models: Object.fromEntries(
-                Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
-              ),
-            })),
-          })
+          setStore("provider", normalizeProviderList(x.data!))
         }),
       agent: () => sdk.app.agents().then((x) => setStore("agent", x.data ?? [])),
       config: () => sdk.config.get().then((x) => setStore("config", x.data!)),
@@ -522,16 +525,7 @@ function createGlobalSync() {
       ),
       retry(() =>
         globalSDK.client.provider.list().then((x) => {
-          const data = x.data!
-          setGlobalStore("provider", {
-            ...data,
-            all: data.all.map((provider) => ({
-              ...provider,
-              models: Object.fromEntries(
-                Object.entries(provider.models).filter(([, info]) => info.status !== "deprecated"),
-              ),
-            })),
-          })
+          setGlobalStore("provider", normalizeProviderList(x.data!))
         }),
       ),
       retry(() =>
@@ -548,6 +542,23 @@ function createGlobalSync() {
     bootstrap()
   })
 
+  async function refreshProviderList(directory?: string) {
+    if (directory) {
+      const [_, setStore] = child(directory)
+      const sdk = createOpencodeClient({
+        baseUrl: globalSDK.url,
+        fetch: platform.fetch,
+        directory,
+        throwOnError: true,
+      })
+      const data = await sdk.provider.list().then((x) => x.data!)
+      setStore("provider", normalizeProviderList(data))
+      return
+    }
+    const data = await globalSDK.client.provider.list().then((x) => x.data!)
+    setGlobalStore("provider", normalizeProviderList(data))
+  }
+
   return {
     data: globalStore,
     get ready() {
@@ -558,6 +569,9 @@ function createGlobalSync() {
     },
     child,
     bootstrap,
+    provider: {
+      refresh: refreshProviderList,
+    },
     project: {
       loadSessions,
     },

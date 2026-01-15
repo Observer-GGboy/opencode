@@ -278,6 +278,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           const visibility = userVisibilityMap().get(key)
           if (visibility === "hide") return false
           if (visibility === "show") return true
+          if (providers.default()[model.providerID] === model.modelID) return true
           if (latestSet().has(key)) return true
           // For models without valid release_date (e.g. custom models), show by default
           const m = find(model)

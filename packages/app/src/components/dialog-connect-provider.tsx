@@ -10,9 +10,11 @@ import { ProviderIcon } from "@opencode-ai/ui/provider-icon"
 import { Spinner } from "@opencode-ai/ui/spinner"
 import { TextField } from "@opencode-ai/ui/text-field"
 import { showToast } from "@opencode-ai/ui/toast"
+import { base64Decode } from "@opencode-ai/util/encode"
 import { iife } from "@opencode-ai/util/iife"
 import { createMemo, Match, onCleanup, onMount, Switch } from "solid-js"
 import { createStore, produce } from "solid-js/store"
+import { useParams } from "@solidjs/router"
 import { Link } from "@/components/link"
 import { useGlobalSDK } from "@/context/global-sdk"
 import { useGlobalSync } from "@/context/global-sync"
@@ -25,6 +27,8 @@ export function DialogConnectProvider(props: { provider: string }) {
   const globalSync = useGlobalSync()
   const globalSDK = useGlobalSDK()
   const platform = usePlatform()
+  const params = useParams()
+  const currentDirectory = createMemo(() => base64Decode(params.dir ?? ""))
   const provider = createMemo(() => globalSync.data.provider.all.find((x) => x.id === props.provider)!)
   const methods = createMemo(
     () =>
@@ -108,6 +112,10 @@ export function DialogConnectProvider(props: { provider: string }) {
 
   async function complete() {
     await globalSDK.client.global.dispose()
+    await Promise.all([
+      globalSync.provider.refresh(),
+      currentDirectory() ? globalSync.provider.refresh(currentDirectory()) : Promise.resolve(),
+    ])
     dialog.close()
     showToast({
       variant: "success",
