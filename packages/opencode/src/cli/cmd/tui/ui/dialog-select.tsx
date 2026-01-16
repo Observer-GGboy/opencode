@@ -109,15 +109,16 @@ export function DialogSelect<T>(props: DialogSelectProps<T>) {
 
   createEffect(
     on([() => store.filter, () => props.current], ([filter, current]) => {
-      if (filter.length > 0) {
-        setStore("selected", 0)
-      } else if (current) {
-        const currentIndex = flat().findIndex((opt) => isDeepEqual(opt.value, current))
-        if (currentIndex >= 0) {
-          setStore("selected", currentIndex)
+      setTimeout(() => {
+        if (filter.length > 0) {
+          moveTo(0, true)
+        } else if (current) {
+          const currentIndex = flat().findIndex((opt) => isDeepEqual(opt.value, current))
+          if (currentIndex >= 0) {
+            moveTo(currentIndex, true)
+          }
         }
-      }
-      scroll?.scrollTo(0)
+      }, 0)
     }),
   )
 
@@ -129,7 +130,7 @@ export function DialogSelect<T>(props: DialogSelectProps<T>) {
     moveTo(next)
   }
 
-  function moveTo(next: number) {
+  function moveTo(next: number, center = false) {
     setStore("selected", next)
     props.onMove?.(selected()!)
     if (!scroll) return
@@ -138,23 +139,44 @@ export function DialogSelect<T>(props: DialogSelectProps<T>) {
     })
     if (!target) return
     const y = target.y - scroll.y
-    if (y >= scroll.height) {
-      scroll.scrollBy(y - scroll.height + 1)
-    }
-    if (y < 0) {
-      scroll.scrollBy(y)
-      if (isDeepEqual(flat()[0].value, selected()?.value)) {
-        scroll.scrollTo(0)
+    if (center) {
+      const centerOffset = Math.floor(scroll.height / 2)
+      scroll.scrollBy(y - centerOffset)
+    } else {
+      if (y >= scroll.height) {
+        scroll.scrollBy(y - scroll.height + 1)
+      }
+      if (y < 0) {
+        scroll.scrollBy(y)
+        if (isDeepEqual(flat()[0].value, selected()?.value)) {
+          scroll.scrollTo(0)
+        }
       }
     }
   }
 
   const keybind = useKeybind()
   useKeyboard((evt) => {
-    if (evt.name === "up" || (evt.ctrl && evt.name === "p")) move(-1)
-    if (evt.name === "down" || (evt.ctrl && evt.name === "n")) move(1)
-    if (evt.name === "pageup") move(-10)
-    if (evt.name === "pagedown") move(10)
+    if (evt.name === "up" || (evt.ctrl && evt.name === "p")) {
+      evt.preventDefault()
+      evt.stopPropagation()
+      move(-1)
+    }
+    if (evt.name === "down" || (evt.ctrl && evt.name === "n")) {
+      evt.preventDefault()
+      evt.stopPropagation()
+      move(1)
+    }
+    if (evt.name === "pageup") {
+      evt.preventDefault()
+      evt.stopPropagation()
+      move(-10)
+    }
+    if (evt.name === "pagedown") {
+      evt.preventDefault()
+      evt.stopPropagation()
+      move(10)
+    }
     if (evt.name === "return") {
       const option = selected()
       if (option) {
