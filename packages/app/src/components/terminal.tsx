@@ -112,7 +112,7 @@ export const Terminal = (props: TerminalProps) => {
       cursorBlink: true,
       cursorStyle: "bar",
       fontSize: 14,
-      fontFamily: "IBM Plex Mono, monospace",
+      fontFamily: "Cascadia Mono, Consolas, Microsoft YaHei UI, PingFang SC, Hiragino Sans GB, SimSun, monospace",
       allowTransparency: true,
       theme: terminalColors(),
       scrollback: 10_000,

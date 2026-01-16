@@ -21,7 +21,15 @@ export function DialogSelectDirectory(props: DialogSelectDirectoryProps) {
   const home = createMemo(() => sync.data.path.home)
   const root = createMemo(() => sync.data.path.home || sync.data.path.directory)
 
+  function isAbsolutePath(input: string) {
+    if (!input) return false
+    if (/^[A-Za-z]:[\\/]/.test(input)) return true
+    if (input.startsWith("\\\\")) return true
+    return input.startsWith("/")
+  }
+
   function join(base: string | undefined, rel: string) {
+    if (isAbsolutePath(rel)) return rel.replace(/[\\/]+$/, "")
     const b = (base ?? "").replace(/[\\/]+$/, "")
     const r = rel.replace(/^[\\/]+/, "").replace(/[\\/]+$/, "")
     if (!b) return r
@@ -30,6 +38,7 @@ export function DialogSelectDirectory(props: DialogSelectDirectoryProps) {
   }
 
   function display(rel: string) {
+    if (isAbsolutePath(rel)) return rel
     const full = join(root(), rel)
     const h = home()
     if (!h) return full
@@ -44,6 +53,7 @@ export function DialogSelectDirectory(props: DialogSelectDirectoryProps) {
     const h = home()
 
     if (!query) return query
+    if (isAbsolutePath(query)) return query
     if (query.startsWith("~/")) return query.slice(2)
 
     if (h) {
@@ -60,6 +70,7 @@ export function DialogSelectDirectory(props: DialogSelectDirectoryProps) {
   async function fetchDirs(query: string) {
     const directory = root()
     if (!directory) return [] as string[]
+    if (isAbsolutePath(query)) return [query.replace(/[\\/]+$/, "")]
 
     const results = await sdk.client.find
       .files({ directory, query, type: "directory", limit: 50 })

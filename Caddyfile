@@ -1,0 +1,12 @@
+:4175 {
+  root * "D:\AI Project\opencode\packages\app\dist"
+  @backend path /agent* /auth* /command* /config* /doc* /event* /experimental* /file* /find* /formatter* /global* /instance* /log* /lsp* /mcp* /path* /permission* /project* /provider* /pty* /session* /tui* /vcs*
+  handle @backend {
+    reverse_proxy 127.0.0.1:4096
+  }
+
+  handle {
+    try_files {path} /index.html
+    file_server
+  }
+}
