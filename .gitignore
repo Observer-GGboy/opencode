@@ -25,3 +25,11 @@ target
 opencode-dev
 logs/
 *.bun-build
+
+# Local user data and tooling
+.logs/
+.opencode-data/
+.opencode-user/
+.opencode/plugin/
+.opencode/opencode.jsonc
+.tools/
